@@ -1,6 +1,8 @@
 import re
 import unicodedata
 import pandas as pd
+from langdetect import detect, LangDetectException as Lang
+from deep_translator import GoogleTranslator
 
 
 class TextCleaner:
@@ -10,6 +12,7 @@ class TextCleaner:
         if missing:
             raise ValueError(f"Columns not found in dataframe: {missing}")
 
+        self.translator = GoogleTranslator(source="auto", target="en")
         self.df = dataframe
         self.text_columns = text_columns
 
@@ -53,4 +56,28 @@ class TextCleaner:
     def clean(self) -> pd.DataFrame:
         for col in self.text_columns:
             self.df[col] = self.df[col].fillna("").astype(str).apply(self._clean_text)
+        return self.df
+
+
+    def _detect_language(self, text: str) -> str:
+        try:
+            return detect(text)
+        except Lang:
+            return "unknown"
+        
+    def _translate_if_needed(self, text: str, target_lang: str) -> str:
+        if not text.strip():
+            return text
+        if self._detect_language(text) != target_lang:
+            try:
+                return self.translator.translate(text)
+            except Exception as e:
+                print(f"Error traduciendo texto: {e}")
+                return text
+        return text
+    
+    def normalize_language(self, target_lang: str = "en") -> pd.DataFrame:
+
+        for col in self.text_columns:
+            self.df[col] = self.df[col].apply(lambda x: self._translate_if_needed(x, target_lang))
         return self.df

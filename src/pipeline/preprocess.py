@@ -1,7 +1,7 @@
 import pandas as pd
 import logging
 from processor.TagProcessor import TagProcessor
-from rocessor.TextCleaner import TextCleaner
+from processor.TextCleaner import TextCleaner
 
 logger = logging.getLogger(__name__)
 
